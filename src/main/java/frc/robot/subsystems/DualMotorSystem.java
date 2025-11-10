@@ -6,7 +6,6 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.ControlRequest;
-import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.VoltageOut;
 import frc.robot.constants.MotorConfigs;
 
@@ -15,6 +14,8 @@ public class DualMotorSystem extends SubsystemBase {
     final private String MOTOR_TYPE = "Falcon500";
     private TalonFX m_Top;
     private TalonFX m_Bottom;
+
+    /** the state of the bottom motor */
     private VoltageOut voltageOut;
     private double voltageInput;
 
@@ -22,9 +23,10 @@ public class DualMotorSystem extends SubsystemBase {
      * The constructor
      */
     public DualMotorSystem() {
-        m_Top = new TalonFX(1, CAN_BUS);
-        m_Bottom = new TalonFX(2, CAN_BUS);
-        voltageInput = 0.5;
+        this.m_Top = new TalonFX(1, CAN_BUS);
+        this.m_Bottom = new TalonFX(2, CAN_BUS);
+        this.voltageInput = 0.5;
+        this.voltageOut = new VoltageOut(0);
         configureMotors();
     }
 
@@ -38,17 +40,47 @@ public class DualMotorSystem extends SubsystemBase {
                         MotorConfigs.getMotorOutputConfigs(NeutralModeValue.Coast, InvertedValue.Clockwise_Positive))
                 .withFeedback(MotorConfigs.getFeedbackConfigs(1 / 1));
 
-        Follower followerConfig = new Follower(m_Top.getDeviceID(), true);
-        m_Bottom.setControl(followerConfig); // the bottom runs the opposite direction from the top one
-
         m_Top.getConfigurator().apply(motorConfigs);
         m_Bottom.getConfigurator().apply(motorConfigs);
     }
 
+    /**
+     * Set the control of a specific motor
+     * 
+     * @param motor
+     *            - the motor you are trying to modify
+     * @param req
+     *            - the control request
+     */
     private void setControl(TalonFX motor, ControlRequest req) {
         if (motor.isAlive()) {
             motor.setControl(req);
         }
+    }
+
+    /**
+     * Get the state of a motor (either clockwise, counterclockwise, or at rest) as
+     * an int
+     * 
+     * @param motor
+     *            - the motor you are getting the state of
+     * @return the state of the motor: -1 = clockwise, 1 = counterclockwise, 0 = at
+     *         rest
+     */
+    public int getMotorState(TalonFX motor) {
+        double velocity = motor.getVelocity().getValueAsDouble();
+
+        // Use 0.01 to avoid noise issue
+        if (velocity > 0.01) {
+            // Clockwise
+            return -1;
+        } else if (velocity < -0.01) {
+            // Counterclockwise
+            return 1;
+        }
+
+        // At rest
+        return 0;
     }
 
     /**
@@ -121,5 +153,25 @@ public class DualMotorSystem extends SubsystemBase {
      */
     public double getVelocity() {
         return m_Bottom.getVelocity().getValueAsDouble();
+    }
+
+    public void driveOpenLoop(double bottomVolts, boolean hasTopOverride) {
+        double topVolts;
+
+        if (hasTopOverride) {
+            // Top spins by itself
+            topVolts = this.voltageInput;
+        } else {
+            if (bottomVolts > 0) { // bottom CW
+                topVolts = -this.voltageInput; // top CCW (1:1)
+            } else if (bottomVolts < 0) { // bottom CCW
+                topVolts = 0; // top rests
+            } else { // bottom rests
+                topVolts = 0;
+            }
+        }
+
+        setControl(m_Bottom, voltageOut.withOutput(bottomVolts));
+        setControl(m_Top, voltageOut.withOutput(topVolts));
     }
 }
