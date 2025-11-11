@@ -54,7 +54,9 @@ public class RobotContainer {
      * joysticks}.
      */
     private void configureBindings() {
-        driver.L1().whileTrue(new RunCommand(() -> dual.driveOpenLoop(driver.getRightY(), false), dual));
+        driver.L1().whileTrue(new RunCommand(() -> dual.bottomCCWUpperRest(driver.getRightY()), dual));
+        driver.L2().whileTrue(new RunCommand(() -> dual.bottomCWUpperCCW(driver.getRightY()), dual));
+        driver.R1().whileTrue(new RunCommand(() -> dual.bottomRestUpperCCW(driver.getRightY()), dual));
 
         driver.options().onTrue(new RunCommand(dual::stopMotor, dual));
     }

@@ -12,7 +12,10 @@ import frc.robot.constants.MotorConfigs;
 public class DualMotorSystem extends SubsystemBase {
     final private String CAN_BUS = "rio";
     final private String MOTOR_TYPE = "Falcon500";
-    private TalonFX m_Top;
+
+    /** Set to 10 temporarily */
+    final private int MAX_VOLTS = 10;
+    private TalonFX m_Upper;
     private TalonFX m_Bottom;
 
     /** the state of the bottom motor */
@@ -23,7 +26,7 @@ public class DualMotorSystem extends SubsystemBase {
      * The constructor
      */
     public DualMotorSystem() {
-        this.m_Top = new TalonFX(1, CAN_BUS);
+        this.m_Upper = new TalonFX(1, CAN_BUS);
         this.m_Bottom = new TalonFX(2, CAN_BUS);
         this.voltageInput = 0.5;
         this.voltageOut = new VoltageOut(0);
@@ -40,7 +43,7 @@ public class DualMotorSystem extends SubsystemBase {
                         MotorConfigs.getMotorOutputConfigs(NeutralModeValue.Coast, InvertedValue.Clockwise_Positive))
                 .withFeedback(MotorConfigs.getFeedbackConfigs(1 / 1));
 
-        m_Top.getConfigurator().apply(motorConfigs);
+        m_Upper.getConfigurator().apply(motorConfigs);
         m_Bottom.getConfigurator().apply(motorConfigs);
     }
 
@@ -131,7 +134,7 @@ public class DualMotorSystem extends SubsystemBase {
      * Stop the 2 motors
      */
     public void stopMotor() {
-        setControl(m_Top, voltageOut.withOutput(0));
+        setControl(m_Upper, voltageOut.withOutput(0));
         setControl(m_Bottom, voltageOut.withOutput(0));
     }
 
@@ -155,23 +158,21 @@ public class DualMotorSystem extends SubsystemBase {
         return m_Bottom.getVelocity().getValueAsDouble();
     }
 
-    public void driveOpenLoop(double bottomVolts, boolean hasTopOverride) {
-        double topVolts;
+    public void bottomCCWUpperRest(double yAxis) {
+        double volts = yAxis * MAX_VOLTS;
+        setControl(m_Bottom, voltageOut.withOutput(volts));
+        setControl(m_Upper, voltageOut.withOutput(0));
+    }
 
-        if (hasTopOverride) {
-            // Top spins by itself
-            topVolts = this.voltageInput;
-        } else {
-            if (bottomVolts > 0) { // bottom CW
-                topVolts = -this.voltageInput; // top CCW (1:1)
-            } else if (bottomVolts < 0) { // bottom CCW
-                topVolts = 0; // top rests
-            } else { // bottom rests
-                topVolts = 0;
-            }
-        }
+    public void bottomCWUpperCCW(double yAxis) {
+        double volts = yAxis * MAX_VOLTS;
+        setControl(m_Bottom, voltageOut.withOutput(volts));
+        setControl(m_Upper, voltageOut.withOutput(-volts));
+    }
 
-        setControl(m_Bottom, voltageOut.withOutput(bottomVolts));
-        setControl(m_Top, voltageOut.withOutput(topVolts));
+    public void bottomRestUpperCCW(double yAxis) {
+        double volts = yAxis * MAX_VOLTS;
+        setControl(m_Bottom, voltageOut.withOutput(0));
+        setControl(m_Upper, voltageOut.withOutput(-volts));
     }
 }
