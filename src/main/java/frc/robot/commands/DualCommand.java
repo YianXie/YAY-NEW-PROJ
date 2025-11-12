@@ -4,13 +4,13 @@
 
 package frc.robot.commands;
 
-import frc.robot.subsystems.ExampleSubsystem;
+import frc.robot.subsystems.DualMotorSystem;
 import edu.wpi.first.wpilibj2.command.Command;
 
 /** An example command that uses an example subsystem. */
-public class ExampleCommand extends Command {
+public class DualCommand extends Command {
     @SuppressWarnings({ "PMD.UnusedPrivateField", "PMD.SingularField" })
-    private final ExampleSubsystem m_subsystem;
+    private final DualMotorSystem m_subsystem;
 
     /**
      * Creates a new ExampleCommand.
@@ -18,7 +18,7 @@ public class ExampleCommand extends Command {
      * @param subsystem
      *            The subsystem used by this command.
      */
-    public ExampleCommand(ExampleSubsystem subsystem) {
+    public DualCommand(DualMotorSystem subsystem) {
         m_subsystem = subsystem;
         // Use addRequirements() here to declare subsystem dependencies.
         addRequirements(subsystem);

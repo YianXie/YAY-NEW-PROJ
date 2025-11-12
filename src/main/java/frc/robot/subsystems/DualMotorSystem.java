@@ -7,20 +7,20 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.ControlRequest;
 import com.ctre.phoenix6.controls.VoltageOut;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.constants.MotorConfigs;
 
 public class DualMotorSystem extends SubsystemBase {
     final private String CAN_BUS = "rio";
     final private String MOTOR_TYPE = "Falcon500";
-
-    /** Set to 10 temporarily */
-    final private int MAX_VOLTS = 10;
+    final private int MAX_VOLTS = 2;
     private TalonFX m_Upper;
     private TalonFX m_Bottom;
 
     /** the state of the bottom motor */
     private VoltageOut voltageOut;
     private double voltageInput;
+    private String debug;
 
     /**
      * The constructor
@@ -30,6 +30,7 @@ public class DualMotorSystem extends SubsystemBase {
         this.m_Bottom = new TalonFX(2, CAN_BUS);
         this.voltageInput = 0.5;
         this.voltageOut = new VoltageOut(0);
+        this.debug = "init";
         configureMotors();
     }
 
@@ -159,20 +160,34 @@ public class DualMotorSystem extends SubsystemBase {
     }
 
     public void bottomCCWUpperRest(double yAxis) {
+        this.debug = "bottomCCWUpperRest";
+        System.out.println("bottomCCWUpperRest");
         double volts = yAxis * MAX_VOLTS;
         setControl(m_Bottom, voltageOut.withOutput(volts));
         setControl(m_Upper, voltageOut.withOutput(0));
     }
 
     public void bottomCWUpperCCW(double yAxis) {
+        this.debug = "bottomCWUpperCCW";
+        System.out.println("bottomCWUpperCCW");
         double volts = yAxis * MAX_VOLTS;
         setControl(m_Bottom, voltageOut.withOutput(volts));
         setControl(m_Upper, voltageOut.withOutput(-volts));
     }
 
     public void bottomRestUpperCCW(double yAxis) {
+        this.debug = "bottomRestUpperCCW";
+        System.out.println("bottomRestUpperCCW");
         double volts = yAxis * MAX_VOLTS;
         setControl(m_Bottom, voltageOut.withOutput(0));
         setControl(m_Upper, voltageOut.withOutput(-volts));
+    }
+
+    @Override
+    public void periodic() {
+        SmartDashboard.putNumber("Upper motor velocity:", getVelocity(m_Upper));
+        SmartDashboard.putNumber("Bottom motor velocity:", getVelocity(m_Bottom));
+        SmartDashboard.putString("DEBUG info:", this.debug);
+        SmartDashboard.putBoolean("Periodic Running", true);
     }
 }

@@ -4,15 +4,12 @@
 
 package frc.robot;
 
-import frc.robot.Constants.OperatorConstants;
 import frc.robot.commands.Autos;
-import frc.robot.commands.ExampleCommand;
 import frc.robot.subsystems.DualMotorSystem;
-import frc.robot.subsystems.ExampleSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 /**
@@ -54,10 +51,32 @@ public class RobotContainer {
      * joysticks}.
      */
     private void configureBindings() {
-        driver.L1().whileTrue(new RunCommand(() -> dual.bottomCCWUpperRest(driver.getRightY()), dual));
-        driver.L2().whileTrue(new RunCommand(() -> dual.bottomCWUpperCCW(driver.getRightY()), dual));
-        driver.R1().whileTrue(new RunCommand(() -> dual.bottomRestUpperCCW(driver.getRightY()), dual));
+        // L1 button: Bottom motor counterclockwise, upper motor at rest
+        driver.L1().whileTrue(new RunCommand(() -> {
+            System.out.println("L1 pressed!");
+            dual.bottomCCWUpperRest(driver.getRightY());
+        }, dual));
 
-        driver.options().onTrue(new RunCommand(dual::stopMotor, dual));
+        // L2 button: Bottom motor clockwise, upper motor counterclockwise
+        driver.L2().whileTrue(new RunCommand(() -> {
+            System.out.println("L2 pressed!");
+            dual.bottomCWUpperCCW(driver.getRightY());
+        }, dual));
+
+        // R1 button: Bottom motor at rest, upper motor counterclockwise
+        driver.R1().whileTrue(new RunCommand(() -> {
+            System.out.println("R1 pressed!");
+            dual.bottomRestUpperCCW(driver.getRightY());
+        }, dual));
+
+        // Options button: Stop both motors
+        driver.options().onTrue(new InstantCommand(() -> {
+            System.out.println("Options pressed!");
+            dual.stopMotor();
+        }, dual));
+    }
+
+    public Command getAutonomousCommand() {
+        return Autos.dualAuto(dual);
     }
 }
